@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import { LoginForm } from "@/features/auth/login-form"
+import type { GreenApiClient } from "@/lib/green-api/client"
 import { GreenApiError } from "@/lib/green-api/errors"
 import type { Credentials, InstanceSettings } from "@/lib/green-api/types"
 
@@ -20,7 +21,11 @@ function setup({
   getStateInstance = vi.fn(async () => "authorized"),
 }: { getStateInstance?: () => Promise<string> } = {}) {
   const onLoggedIn = vi.fn()
-  const createClient = vi.fn((_credentials: Credentials) => ({
+  const createClient = vi.fn<
+    (
+      credentials: Credentials,
+    ) => Pick<GreenApiClient, "getStateInstance" | "getSettings">
+  >(() => ({
     getStateInstance,
     getSettings: vi.fn(async () => settings),
   }))

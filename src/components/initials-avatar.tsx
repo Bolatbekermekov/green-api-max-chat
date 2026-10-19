@@ -1,3 +1,5 @@
+import { UserRoundIcon } from "lucide-react"
+
 import { getAvatarTone, getInitials } from "@/lib/avatar"
 import { cn } from "@/lib/utils"
 
@@ -27,6 +29,7 @@ export function InitialsAvatar({
   size?: keyof typeof SIZES
   className?: string
 }) {
+  const initials = getInitials(title)
   return (
     <div
       aria-hidden="true"
@@ -37,7 +40,8 @@ export function InitialsAvatar({
         className,
       )}
     >
-      {getInitials(title)}
+      {/* Chats named by a phone number get a person icon, as in MAX. */}
+      {initials === "#" ? <UserRoundIcon className="size-[55%]" /> : initials}
     </div>
   )
 }

@@ -17,6 +17,7 @@ import {
 } from "react"
 import { z } from "zod"
 
+import { FilledInput } from "@/components/filled-input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -31,7 +32,6 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import {
   verifyCredentials,
   type VerifyResult,
@@ -43,7 +43,6 @@ import {
 } from "@/lib/green-api/client"
 import { describeError } from "@/lib/green-api/errors"
 import type { Credentials } from "@/lib/green-api/types"
-import { cn } from "@/lib/utils"
 
 function isHttpsUrl(value: string): boolean {
   try {
@@ -75,9 +74,6 @@ function validateField(name: FieldName, value: string): string | undefined {
   const result = schema.shape[name].safeParse(value)
   return result.success ? undefined : result.error.issues[0]?.message
 }
-
-export const fieldInputClass =
-  "h-12 rounded-xl border-transparent bg-field px-4 text-base placeholder:text-tertiary md:text-base dark:bg-field focus-visible:border-ring"
 
 type LoginFormProps = {
   onLoggedIn: (credentials: Credentials, result: VerifyResult) => void
@@ -189,7 +185,7 @@ export function LoginForm({
           <FieldLabel htmlFor={fieldIds.idInstance}>
             ID инстанса (idInstance)
           </FieldLabel>
-          <Input
+          <FilledInput
             id={fieldIds.idInstance}
             name="idInstance"
             inputMode="numeric"
@@ -201,7 +197,6 @@ export function LoginForm({
             onBlur={handleBlur("idInstance")}
             aria-invalid={errors.idInstance ? true : undefined}
             aria-describedby={describedBy("idInstance")}
-            className={fieldInputClass}
           />
           <FieldError id={`${fieldIds.idInstance}-error`}>
             {errors.idInstance}
@@ -213,7 +208,7 @@ export function LoginForm({
             API-токен (apiTokenInstance)
           </FieldLabel>
           <div className="relative">
-            <Input
+            <FilledInput
               id={fieldIds.apiTokenInstance}
               name="apiTokenInstance"
               type={showToken ? "text" : "password"}
@@ -225,7 +220,7 @@ export function LoginForm({
               onBlur={handleBlur("apiTokenInstance")}
               aria-invalid={errors.apiTokenInstance ? true : undefined}
               aria-describedby={describedBy("apiTokenInstance")}
-              className={cn(fieldInputClass, "pr-12")}
+              className="pr-12"
             />
             <button
               type="button"
@@ -258,7 +253,7 @@ export function LoginForm({
               <FieldLabel htmlFor={fieldIds.apiUrl}>
                 Адрес API (apiUrl)
               </FieldLabel>
-              <Input
+              <FilledInput
                 id={fieldIds.apiUrl}
                 name="apiUrl"
                 inputMode="url"
@@ -276,7 +271,6 @@ export function LoginForm({
                 aria-describedby={
                   describedBy("apiUrl") ?? `${fieldIds.apiUrl}-hint`
                 }
-                className={fieldInputClass}
               />
               {errors.apiUrl ? (
                 <FieldError id={`${fieldIds.apiUrl}-error`}>
