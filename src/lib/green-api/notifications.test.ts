@@ -26,7 +26,19 @@ describe("parseNotification", () => {
       text: "Привет от Green-API!",
       timestamp: 1763115112000,
       chatName: "Иван",
+      phone: "79876543210",
     })
+  })
+
+  it("leaves out a hidden sender phone", () => {
+    const body = incomingTextBody({
+      chatId: "10000000",
+      idMessage: "A6",
+      text: "Привет",
+    })
+    body.senderData.senderPhoneNumber = 0
+
+    expect(parseNotification(body)).not.toHaveProperty("phone")
   })
 
   it("reads text with a link from extendedTextMessageData.text", () => {

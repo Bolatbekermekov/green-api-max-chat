@@ -55,6 +55,22 @@ describe("chats", () => {
     })
   })
 
+  it("remembers the phone of an incoming chat", () => {
+    store().applyEvent(
+      incoming({
+        chatId: "40000000",
+        chatName: undefined,
+        phone: "79876543210",
+      }),
+    )
+
+    expect(store().chats["40000000"]).toMatchObject({
+      title: "+7 987 654-32-10",
+      phone: "79876543210",
+    })
+    expect(store().phoneIndex["79876543210"]).toBe("40000000")
+  })
+
   it("titles a chat without a name by its id", () => {
     store().applyEvent(incoming({ chatId: "30000000", chatName: undefined }))
     expect(store().chats["30000000"].title).toBe("Чат 30000000")

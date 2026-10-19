@@ -16,6 +16,8 @@ export type ChatEvent =
       /** Milliseconds since epoch. */
       timestamp: number
       chatName?: string
+      /** Sender's phone digits, for incoming messages when MAX shares it. */
+      phone?: string
     }
   | {
       type: "status"
@@ -40,6 +42,8 @@ const messageNotification = z.object({
     chatName: z.string().optional(),
     senderName: z.string().optional(),
     senderContactName: z.string().optional(),
+    // 0 when the number is hidden.
+    senderPhoneNumber: z.number().optional(),
   }),
   messageData: z.object({
     typeMessage: z.string(),
@@ -126,6 +130,10 @@ export function parseNotification(body: unknown): ChatEvent | null {
           ? senderData.senderContactName || senderData.senderName
           : undefined) ||
         undefined
+      const phone =
+        direction === "in" && senderData.senderPhoneNumber
+          ? String(senderData.senderPhoneNumber)
+          : undefined
 
       return {
         type: "message",
@@ -135,6 +143,7 @@ export function parseNotification(body: unknown): ChatEvent | null {
         text: extractText(notification.messageData),
         timestamp: notification.timestamp * 1000,
         chatName,
+        ...(phone ? { phone } : {}),
       }
     }
   }

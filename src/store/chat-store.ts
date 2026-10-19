@@ -289,6 +289,14 @@ export const useChatStore = create<ChatState>()(
             if (list.some((m) => m.idMessage === event.idMessage)) return state
 
             const chat = ensureChat(state.chats, chatId, event.timestamp)
+            const phone = chat.phone ?? event.phone
+            const placeholder = hasPlaceholderTitle(chat)
+            const title =
+              event.chatName && placeholder
+                ? event.chatName
+                : placeholder
+                  ? defaultTitle(chatId, phone)
+                  : chat.title
             const isUnread =
               event.direction === "in" && state.activeChatId !== chatId
             const message: ChatMessage = {
@@ -305,10 +313,8 @@ export const useChatStore = create<ChatState>()(
                 ...state.chats,
                 [chatId]: {
                   ...chat,
-                  title:
-                    event.chatName && hasPlaceholderTitle(chat)
-                      ? event.chatName
-                      : chat.title,
+                  phone,
+                  title,
                   lastActivityAt: Math.max(
                     chat.lastActivityAt,
                     event.timestamp,
@@ -320,6 +326,11 @@ export const useChatStore = create<ChatState>()(
                 ...state.messages,
                 [chatId]: insertSorted(list, message),
               },
+              // A known number later opens this chat without a CheckAccount call.
+              phoneIndex:
+                phone && !state.phoneIndex[phone]
+                  ? { ...state.phoneIndex, [phone]: chatId }
+                  : state.phoneIndex,
             }
           })
         },
