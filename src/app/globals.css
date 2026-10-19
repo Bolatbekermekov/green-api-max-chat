@@ -45,6 +45,7 @@
   --color-bubble-out: var(--bubble-out);
   --color-bubble-out-foreground: var(--bubble-out-foreground);
   --color-bubble-out-meta: var(--bubble-out-meta);
+  --color-bubble-out-read: var(--bubble-out-read);
   --color-chip: var(--chip);
   --color-chip-foreground: var(--chip-foreground);
 
@@ -90,6 +91,7 @@
   --bubble-out: #e9fdff;
   --bubble-out-foreground: #011c29;
   --bubble-out-meta: #06739f; /* MAX #0784b8 */
+  --bubble-out-read: #007aff;
 
   --chat-backdrop: linear-gradient(
     150deg,
@@ -133,6 +135,7 @@
   --bubble-out: #5b57d6; /* MAX #6965e5: its time label is 2.8:1 */
   --bubble-out-foreground: #ffffff;
   --bubble-out-meta: #ffffffe0;
+  --bubble-out-read: #8ac7ff; /* brand blue is invisible on the violet bubble */
 
   --chat-backdrop: radial-gradient(120% 90% at 50% 0%, #191a2c 0%, #0f0f12 70%);
   --chat-pattern: #505bc74d;
