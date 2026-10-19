@@ -58,7 +58,7 @@ function setup(steps: Step[], deleteFailures: Error[] = []) {
     onFatalError: vi.fn(),
     onConnectionChange: vi.fn(),
     onError: vi.fn(),
-    sleep: vi.fn(async () => {}),
+    sleep: vi.fn<typeof abortableSleep>(async () => {}),
   }
   return { options, client, log, controller }
 }
