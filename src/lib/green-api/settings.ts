@@ -26,18 +26,21 @@ export const RECOMMENDED_SETTINGS: Partial<InstanceSettings> = {
   stateWebhook: "yes",
 }
 
+/** Also raised by the polling loop when ReceiveNotification answers 400. */
+export const WEBHOOK_URL_ISSUE: SettingsIssue = {
+  key: "webhookUrl",
+  severity: "error",
+  message:
+    "Указан webhookUrl — пока он задан, сообщения через HTTP API не приходят",
+}
+
 export function findSettingsIssues(
   settings: InstanceSettings,
 ): SettingsIssue[] {
   const issues: SettingsIssue[] = []
 
   if (settings.webhookUrl) {
-    issues.push({
-      key: "webhookUrl",
-      severity: "error",
-      message:
-        "Указан webhookUrl — пока он задан, сообщения через HTTP API не приходят",
-    })
+    issues.push(WEBHOOK_URL_ISSUE)
   }
   if (settings.incomingWebhook !== "yes") {
     issues.push({
