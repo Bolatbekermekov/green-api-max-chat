@@ -14,16 +14,10 @@ export const MAX_MESSAGE_LENGTH = 4000
 const COUNTER_FROM = 3500
 const MAX_HEIGHT_PX = 136 // about six lines
 
-export function Composer({
-  onSend,
-  disabled = false,
-}: {
-  onSend: (text: string) => void
-  disabled?: boolean
-}) {
+export function Composer({ onSend }: { onSend: (text: string) => void }) {
   const [text, setText] = useState("")
   const field = useRef<HTMLTextAreaElement>(null)
-  const canSend = !disabled && text.trim().length > 0
+  const canSend = text.trim().length > 0
 
   // Grow with the content up to ~6 lines, then scroll inside.
   useLayoutEffect(() => {

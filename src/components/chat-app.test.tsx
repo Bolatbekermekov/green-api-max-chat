@@ -51,6 +51,19 @@ describe("ChatApp", () => {
   })
 })
 
+describe("ChatApp with broken storage", () => {
+  it("falls back to the login screen when saved data is corrupted", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {})
+    localStorage.setItem(SESSION_STORAGE_KEY, "{not json")
+
+    render(<ChatApp />)
+
+    expect(
+      await screen.findByRole("heading", { name: "Экран входа" }),
+    ).toBeInTheDocument()
+  })
+})
+
 describe("useGreenApi", () => {
   it("fails loudly outside GreenApiProvider", () => {
     vi.spyOn(console, "error").mockImplementation(() => {})
