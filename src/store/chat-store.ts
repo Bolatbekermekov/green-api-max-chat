@@ -91,11 +91,16 @@ function hasPlaceholderTitle(chat: Chat): boolean {
   return chat.title === defaultTitle(chat.chatId, chat.phone)
 }
 
+// GREEN-API timestamps have one-second precision while our own messages carry
+// milliseconds, so order by whole seconds and keep arrival order inside one.
+const toSecond = (timestamp: number) => Math.floor(timestamp / 1000)
+
 function insertSorted(
   list: ChatMessage[],
   message: ChatMessage,
 ): ChatMessage[] {
-  const index = list.findIndex((m) => m.timestamp > message.timestamp)
+  const second = toSecond(message.timestamp)
+  const index = list.findIndex((m) => toSecond(m.timestamp) > second)
   if (index === -1) return [...list, message]
   return [...list.slice(0, index), message, ...list.slice(index)]
 }

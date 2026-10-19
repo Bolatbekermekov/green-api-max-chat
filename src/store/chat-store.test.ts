@@ -221,6 +221,18 @@ describe("events", () => {
     ])
   })
 
+  it("keeps arrival order within the same second", () => {
+    // Our message has a millisecond client timestamp; the reply that comes
+    // right after it has a server timestamp rounded down to the second.
+    const localId = store().addPendingMessage(chatId, "Вопрос", 1_000_700)
+    store().applyEvent(incoming({ idMessage: "reply", timestamp: 1_000_000 }))
+
+    expect(store().messages[chatId].map((m) => m.id)).toEqual([
+      localId,
+      "reply",
+    ])
+  })
+
   it("never downgrades status", () => {
     store().upsertChat({ chatId })
     const localId = store().addPendingMessage(chatId, "x", 5_000)
