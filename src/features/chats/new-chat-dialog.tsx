@@ -20,8 +20,15 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { resolveChatByPhone } from "@/features/chats/resolve-chat"
+import { MESSENGER_NAMES, type MessengerType } from "@/lib/green-api/messenger"
 import { normalizePhone } from "@/lib/phone"
 import { useChatStore } from "@/store/chat-store"
+import { useMessenger } from "@/store/session-store"
+
+const PHONE_HINTS: Record<MessengerType, string> = {
+  max: "Номер, зарегистрированный в MAX (+7 или +375)",
+  whatsapp: "Номер с кодом страны, зарегистрированный в WhatsApp",
+}
 
 export function NewChatDialog({
   open,
@@ -31,6 +38,7 @@ export function NewChatDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const client = useGreenApi()
+  const messenger = useMessenger()
   const id = useId()
   const [phone, setPhone] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -51,7 +59,7 @@ export function NewChatDialog({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const parsed = normalizePhone(phone)
+    const parsed = normalizePhone(phone, messenger)
     if (!parsed.ok) {
       setError(parsed.error)
       return
@@ -65,6 +73,7 @@ export function NewChatDialog({
     try {
       const result = await resolveChatByPhone(
         client,
+        messenger,
         parsed.digits,
         useChatStore.getState().phoneIndex,
         controller.signal,
@@ -94,7 +103,7 @@ export function NewChatDialog({
         <DialogHeader>
           <DialogTitle className="text-xl">Новый чат</DialogTitle>
           <DialogDescription>
-            Проверим номер в MAX и откроем переписку
+            Проверим номер в {MESSENGER_NAMES[messenger]} и откроем переписку
           </DialogDescription>
         </DialogHeader>
         <form
@@ -122,7 +131,7 @@ export function NewChatDialog({
               <FieldError id={`${inputId}-error`}>{error}</FieldError>
             ) : (
               <FieldDescription id={`${inputId}-hint`}>
-                Номер, зарегистрированный в MAX (+7 или +375)
+                {PHONE_HINTS[messenger]}
               </FieldDescription>
             )}
           </Field>

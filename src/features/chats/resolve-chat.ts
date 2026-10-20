@@ -1,5 +1,6 @@
 import type { GreenApiClient } from "@/lib/green-api/client"
 import { describeError } from "@/lib/green-api/errors"
+import type { MessengerType } from "@/lib/green-api/messenger"
 import { formatPhone } from "@/lib/phone"
 
 export type ResolveChatResult =
@@ -8,11 +9,13 @@ export type ResolveChatResult =
 
 /**
  * MAX addresses chats by numeric chatId, so a phone number has to be looked
- * up with CheckAccount first. Known numbers come from the local index —
- * the free plan allows only 100 checks a month.
+ * up with CheckAccount first. A WhatsApp chat is the number itself
+ * ("79001234567@c.us"); CheckWhatsapp only confirms the account exists.
+ * Known numbers come from the local index — the free plan limits checks.
  */
 export async function resolveChatByPhone(
-  client: Pick<GreenApiClient, "checkAccount">,
+  client: Pick<GreenApiClient, "checkAccount" | "checkWhatsapp">,
+  messenger: MessengerType,
   phoneDigits: string,
   phoneIndex: Record<string, string>,
   signal?: AbortSignal,
@@ -21,6 +24,17 @@ export async function resolveChatByPhone(
   if (cached) return { ok: true, chatId: cached, fromCache: true }
 
   try {
+    if (messenger === "whatsapp") {
+      const { exists } = await client.checkWhatsapp(phoneDigits, signal)
+      if (!exists) {
+        return {
+          ok: false,
+          error: `У номера ${formatPhone(phoneDigits)} нет WhatsApp`,
+        }
+      }
+      return { ok: true, chatId: `${phoneDigits}@c.us`, fromCache: false }
+    }
+
     const { exist, chatId } = await client.checkAccount(phoneDigits, signal)
     if (!exist || !chatId) {
       return {

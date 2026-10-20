@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { GreenApiProvider } from "@/components/green-api-provider"
 import { ChatSidebar } from "@/features/chats/chat-sidebar"
 import { initialChatState, useChatStore } from "@/store/chat-store"
+import { initialSessionState, useSessionStore } from "@/store/session-store"
 import { fakeGreenApiClient } from "@/test/fake-green-api-client"
 
 function renderSidebar() {
@@ -50,6 +51,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] })
   vi.setSystemTime(Date.UTC(2026, 9, 20, 12, 0))
   useChatStore.setState(initialChatState)
+  useSessionStore.setState({ ...initialSessionState, messenger: "max" })
 })
 
 afterEach(() => {
@@ -95,6 +97,16 @@ describe("ChatSidebar", () => {
 
     expect(
       screen.getByRole("dialog", { name: "Новый чат" }),
+    ).toBeInTheDocument()
+  })
+
+  it("names the messenger of the instance", () => {
+    useSessionStore.setState({ messenger: "whatsapp" })
+    renderSidebar()
+
+    expect(screen.getByText("WhatsApp")).toBeInTheDocument()
+    expect(
+      screen.getByText("Напишите кому-нибудь в WhatsApp по номеру телефона"),
     ).toBeInTheDocument()
   })
 })

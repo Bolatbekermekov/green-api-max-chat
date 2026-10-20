@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ChatListItem } from "@/features/chats/chat-list-item"
 import { NewChatDialog } from "@/features/chats/new-chat-dialog"
+import { MESSENGER_NAMES } from "@/lib/green-api/messenger"
 import { cn } from "@/lib/utils"
 import { selectChatList, useChatStore, type Chat } from "@/store/chat-store"
+import { useMessenger } from "@/store/session-store"
 
 function matchesQuery(chat: Chat, query: string): boolean {
   const text = query.trim().toLowerCase()
@@ -24,6 +26,7 @@ export function ChatSidebar({ className }: { className?: string }) {
   const messages = useChatStore((state) => state.messages)
   const activeChatId = useChatStore((state) => state.activeChatId)
   const openChat = useChatStore((state) => state.openChat)
+  const messengerName = MESSENGER_NAMES[useMessenger()]
   const [query, setQuery] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
 
@@ -37,7 +40,13 @@ export function ChatSidebar({ className }: { className?: string }) {
       className={cn("flex min-h-0 flex-col border-r bg-background", className)}
     >
       <header className="flex items-center justify-between px-4 pt-4 pb-3">
-        <h1 className="text-2xl leading-7 font-semibold">Чаты</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl leading-7 font-semibold">Чаты</h1>
+          <p className="rounded-full bg-chip px-2.5 py-0.5 text-[13px] leading-5 font-medium text-chip-foreground">
+            <span className="sr-only">Мессенджер: </span>
+            {messengerName}
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => setDialogOpen(true)}
@@ -72,7 +81,7 @@ export function ChatSidebar({ className }: { className?: string }) {
             />
             <p className="text-base font-medium">Чатов пока нет</p>
             <p className="text-sm text-muted-foreground">
-              Напишите кому-нибудь в MAX по номеру телефона
+              Напишите кому-нибудь в {messengerName} по номеру телефона
             </p>
             <Button
               onClick={() => setDialogOpen(true)}

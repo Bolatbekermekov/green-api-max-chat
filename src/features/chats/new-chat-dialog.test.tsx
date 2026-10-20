@@ -6,10 +6,17 @@ import { GreenApiProvider } from "@/components/green-api-provider"
 import { NewChatDialog } from "@/features/chats/new-chat-dialog"
 import type { GreenApiClient } from "@/lib/green-api/client"
 import { initialChatState, useChatStore } from "@/store/chat-store"
+import { initialSessionState, useSessionStore } from "@/store/session-store"
 import { fakeGreenApiClient } from "@/test/fake-green-api-client"
 
-function setup(checkAccount: GreenApiClient["checkAccount"]) {
-  const client = fakeGreenApiClient({ checkAccount: vi.fn(checkAccount) })
+function setup(
+  checkAccount: GreenApiClient["checkAccount"],
+  overrides: Partial<GreenApiClient> = {},
+) {
+  const client = fakeGreenApiClient({
+    checkAccount: vi.fn(checkAccount),
+    ...overrides,
+  })
   const onOpenChange = vi.fn()
   render(
     <GreenApiProvider client={client}>
@@ -24,6 +31,7 @@ const submit = () => screen.getByRole("button", { name: "Создать чат" 
 
 beforeEach(() => {
   useChatStore.setState(initialChatState)
+  useSessionStore.setState({ ...initialSessionState, messenger: "max" })
 })
 
 describe("NewChatDialog", () => {
@@ -75,5 +83,30 @@ describe("NewChatDialog", () => {
     )
     expect(onOpenChange).not.toHaveBeenCalledWith(false)
     expect(useChatStore.getState().chats).toEqual({})
+  })
+
+  it("checks a WhatsApp number in any country and opens its chat", async () => {
+    useSessionStore.setState({ messenger: "whatsapp" })
+    const checkWhatsapp = vi.fn(async () => ({ exists: true }))
+    const { user, client } = setup(async () => ({ exist: true, chatId: "1" }), {
+      checkWhatsapp,
+    })
+
+    expect(
+      screen.getByText("Проверим номер в WhatsApp и откроем переписку"),
+    ).toBeInTheDocument()
+    await user.type(phoneField(), "+998 90 123-45-67")
+    await user.click(submit())
+
+    expect(checkWhatsapp).toHaveBeenCalledWith(
+      "998901234567",
+      expect.any(AbortSignal),
+    )
+    expect(client.checkAccount).not.toHaveBeenCalled()
+    const state = useChatStore.getState()
+    expect(state.chats["998901234567@c.us"]).toMatchObject({
+      phone: "998901234567",
+    })
+    expect(state.activeChatId).toBe("998901234567@c.us")
   })
 })
