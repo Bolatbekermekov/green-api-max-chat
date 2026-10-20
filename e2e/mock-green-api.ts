@@ -1,7 +1,14 @@
 import type { Page, Route } from "@playwright/test"
 
+import type { MessengerType } from "../src/lib/green-api/messenger"
+
 export const TEST_CREDENTIALS = {
   idInstance: "3100000001",
+  apiTokenInstance: "test-token",
+}
+
+export const WHATSAPP_CREDENTIALS = {
+  idInstance: "1101000001",
   apiTokenInstance: "test-token",
 }
 
@@ -22,10 +29,14 @@ const CORS = {
 }
 
 type MockOptions = {
+  /** The instance type getSettings reports; MAX by default. */
+  messenger?: MessengerType
   state?: string
   settings?: Partial<typeof DEFAULT_SETTINGS>
-  /** Phone digits → chatId that CheckAccount should find. */
+  /** MAX: phone digits → chatId that CheckAccount should find. */
   accounts?: Record<string, string>
+  /** WhatsApp: phone digits that CheckWhatsapp should find. */
+  whatsappNumbers?: string[]
   validToken?: string
 }
 
@@ -70,7 +81,11 @@ export async function mockGreenApi(page: Page, options: MockOptions = {}) {
           stateInstance: options.state ?? "authorized",
         })
       case "getSettings":
-        return reply(route, 200, { ...DEFAULT_SETTINGS, ...options.settings })
+        return reply(route, 200, {
+          ...DEFAULT_SETTINGS,
+          typeInstance: options.messenger === "whatsapp" ? "whatsapp" : "v3",
+          ...options.settings,
+        })
       case "setSettings":
         settingsUpdates.push(request.postDataJSON())
         return reply(route, 200, { saveSettings: true })
@@ -80,6 +95,20 @@ export async function mockGreenApi(page: Page, options: MockOptions = {}) {
         return reply(route, 200, {
           exist: Boolean(chatId),
           chatId: chatId ?? "",
+          fromCache: false,
+        })
+      }
+      case "checkWhatsapp": {
+        const phone = String(request.postDataJSON().chatId).replace(
+          /@c\.us$/,
+          "",
+        )
+        const exists = Boolean(options.whatsappNumbers?.includes(phone))
+        return reply(route, 200, {
+          existsWhatsapp: exists,
+          chatId: exists ? "123456789012345@lid" : "",
+          username: "",
+          phoneNumber: exists ? `${phone}@c.us` : "",
           fromCache: false,
         })
       }

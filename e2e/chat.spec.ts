@@ -6,13 +6,21 @@ import {
   statusBody,
 } from "../src/lib/green-api/fixtures"
 import { RECOMMENDED_SETTINGS } from "../src/lib/green-api/settings"
-import { mockGreenApi, TEST_CREDENTIALS } from "./mock-green-api"
+import {
+  mockGreenApi,
+  TEST_CREDENTIALS,
+  WHATSAPP_CREDENTIALS,
+} from "./mock-green-api"
 
-async function logIn(page: Page, token = TEST_CREDENTIALS.apiTokenInstance) {
+async function logIn(
+  page: Page,
+  {
+    idInstance = TEST_CREDENTIALS.idInstance,
+    token = TEST_CREDENTIALS.apiTokenInstance,
+  } = {},
+) {
   await page.goto("/")
-  await page
-    .getByLabel("ID инстанса (idInstance)")
-    .fill(TEST_CREDENTIALS.idInstance)
+  await page.getByLabel("ID инстанса (idInstance)").fill(idInstance)
   await page.getByLabel("API-токен (apiTokenInstance)").fill(token)
   await page.getByRole("button", { name: "Войти" }).click()
 }
@@ -79,7 +87,7 @@ test("full flow: login, new chat, send, reply, read", async ({ page }) => {
 test("wrong token shows an error", async ({ page }) => {
   await mockGreenApi(page)
 
-  await logIn(page, "wrong-token")
+  await logIn(page, { token: "wrong-token" })
 
   await expect(
     page.getByRole("alert").filter({ hasText: "Неверный apiTokenInstance" }),
@@ -99,6 +107,80 @@ test("settings banner fixes settings", async ({ page }) => {
 
   await expect.poll(() => api.settingsUpdates).toEqual([RECOMMENDED_SETTINGS])
   await expect(banner).toBeHidden()
+})
+
+test("WhatsApp: login, new chat, send, reply, read", async ({ page }) => {
+  const chatId = "77011234567@c.us"
+  const api = await mockGreenApi(page, {
+    messenger: "whatsapp",
+    whatsappNumbers: ["77011234567"],
+  })
+
+  await logIn(page, { idInstance: WHATSAPP_CREDENTIALS.idInstance })
+  await expect(page.getByText("Мессенджер: WhatsApp")).toBeVisible()
+
+  await page.getByRole("button", { name: "Новый чат" }).click()
+  await page.getByLabel("Номер телефона").fill("8 701 123 45 67")
+  await page.getByRole("button", { name: "Создать чат" }).click()
+  await expect(
+    page.getByRole("heading", { level: 2, name: "+7 701 123-45-67" }),
+  ).toBeVisible()
+
+  await page
+    .getByRole("textbox", { name: "Сообщение" })
+    .fill("Привет из WhatsApp!")
+  await page.keyboard.press("Enter")
+  await expect
+    .poll(() => api.sent)
+    .toEqual([{ chatId, message: "Привет из WhatsApp!" }])
+
+  api.push(
+    outgoingTextBody({
+      messenger: "whatsapp",
+      chatId,
+      idMessage: "MSG-1",
+      text: "Привет из WhatsApp!",
+      timestamp: nowInSeconds(),
+    }),
+  )
+  api.push(
+    incomingTextBody({
+      messenger: "whatsapp",
+      chatId,
+      idMessage: "IN-1",
+      text: "Ответ из WhatsApp",
+      timestamp: nowInSeconds(),
+      chatName: "Айгерим",
+    }),
+  )
+  api.push(
+    statusBody({
+      messenger: "whatsapp",
+      chatId,
+      idMessage: "MSG-1",
+      status: "read",
+    }),
+  )
+
+  const transcript = page.getByRole("region", { name: "Сообщения" })
+  await expect(transcript.getByText("Ответ из WhatsApp")).toBeVisible()
+  await expect(transcript.getByRole("img", { name: "Прочитано" })).toBeVisible()
+  await expect(transcript.getByText("Привет из WhatsApp!")).toHaveCount(1)
+  await expect(
+    page.getByRole("heading", { level: 2, name: "Айгерим" }),
+  ).toBeVisible()
+})
+
+test("an instance of another messenger is refused", async ({ page }) => {
+  await mockGreenApi(page, { settings: { typeInstance: "telegram" } })
+
+  await logIn(page)
+
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Чат работает с инстансами MAX и WhatsApp",
+    }),
+  ).toBeVisible()
 })
 
 test("a number without MAX keeps the dialog open", async ({ page }) => {
