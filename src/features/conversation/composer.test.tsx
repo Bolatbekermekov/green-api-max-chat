@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest"
 
 import { Composer } from "@/features/conversation/composer"
 
-function setup() {
+function setup({ maxLength = 4000 }: { maxLength?: number } = {}) {
   const onSend = vi.fn()
-  render(<Composer onSend={onSend} />)
+  render(<Composer onSend={onSend} maxLength={maxLength} />)
   return {
     onSend,
     user: userEvent.setup(),
@@ -70,5 +70,17 @@ describe("Composer", () => {
     await user.paste("x".repeat(3600))
 
     expect(screen.getByText("3600/4000")).toBeInTheDocument()
+  })
+
+  it("follows the messenger's limit", async () => {
+    const { user, field } = setup({ maxLength: 20000 })
+    expect(field).toHaveAttribute("maxLength", "20000")
+
+    await user.click(field)
+    await user.paste("x".repeat(4000))
+    expect(screen.queryByText(/\/20000$/)).not.toBeInTheDocument()
+
+    await user.paste("x".repeat(15600))
+    expect(screen.getByText("19600/20000")).toBeInTheDocument()
   })
 })

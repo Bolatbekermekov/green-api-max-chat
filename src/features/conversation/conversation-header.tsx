@@ -1,8 +1,10 @@
 import { ChevronLeftIcon } from "lucide-react"
 
 import { InitialsAvatar } from "@/components/initials-avatar"
+import { MESSENGER_NAMES } from "@/lib/green-api/messenger"
 import { formatPhone } from "@/lib/phone"
 import type { Chat } from "@/store/chat-store"
+import { useMessenger } from "@/store/session-store"
 
 export function ConversationHeader({
   chat,
@@ -11,8 +13,9 @@ export function ConversationHeader({
   chat: Chat
   onBack: () => void
 }) {
+  const messengerName = MESSENGER_NAMES[useMessenger()]
   const phone = chat.phone ? formatPhone(chat.phone) : undefined
-  const subtitle = phone && phone !== chat.title ? phone : "в MAX"
+  const subtitle = phone && phone !== chat.title ? phone : `в ${messengerName}`
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-background px-2 md:px-4">

@@ -23,7 +23,9 @@ import {
   sendChatMessage,
 } from "@/features/conversation/send-message"
 import { buildTimeline } from "@/features/conversation/timeline"
+import { MESSAGE_LIMITS } from "@/lib/green-api/messenger"
 import { useChatStore, type ChatMessage } from "@/store/chat-store"
+import { useMessenger } from "@/store/session-store"
 
 const NO_MESSAGES: ChatMessage[] = []
 
@@ -51,6 +53,7 @@ export function Conversation({ chatId }: { chatId: string }) {
 
 function Transcript({ chatId }: { chatId: string }) {
   const client = useGreenApi()
+  const messenger = useMessenger()
   const messages = useChatStore(
     (state) => state.messages[chatId] ?? NO_MESSAGES,
   )
@@ -111,7 +114,7 @@ function Transcript({ chatId }: { chatId: string }) {
         </MessageScroller>
       </div>
       <div className="shrink-0 px-3 pb-3 md:px-6 md:pb-4">
-        <Composer onSend={handleSend} />
+        <Composer onSend={handleSend} maxLength={MESSAGE_LIMITS[messenger]} />
       </div>
     </>
   )

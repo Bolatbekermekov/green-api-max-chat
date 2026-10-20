@@ -9,12 +9,18 @@ import {
   type KeyboardEvent,
 } from "react"
 
-/** SendMessage accepts at most 4000 characters for MAX. */
-export const MAX_MESSAGE_LENGTH = 4000
-const COUNTER_FROM = 3500
+// The counter appears this many characters before the limit.
+const COUNTER_MARGIN = 500
 const MAX_HEIGHT_PX = 136 // about six lines
 
-export function Composer({ onSend }: { onSend: (text: string) => void }) {
+export function Composer({
+  onSend,
+  maxLength,
+}: {
+  onSend: (text: string) => void
+  /** The messenger's SendMessage limit. */
+  maxLength: number
+}) {
   const [text, setText] = useState("")
   const field = useRef<HTMLTextAreaElement>(null)
   const canSend = text.trim().length > 0
@@ -63,12 +69,12 @@ export function Composer({ onSend }: { onSend: (text: string) => void }) {
         onKeyDown={handleKeyDown}
         placeholder="Сообщение"
         aria-label="Сообщение"
-        maxLength={MAX_MESSAGE_LENGTH}
+        maxLength={maxLength}
         className="min-h-9 flex-1 resize-none bg-transparent py-2 text-base leading-5 outline-none placeholder:text-tertiary"
       />
-      {text.length > COUNTER_FROM && (
+      {text.length > maxLength - COUNTER_MARGIN && (
         <span className="self-center text-xs text-tertiary tabular-nums">
-          {text.length}/{MAX_MESSAGE_LENGTH}
+          {text.length}/{maxLength}
         </span>
       )}
       <button

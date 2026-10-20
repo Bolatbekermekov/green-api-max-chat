@@ -14,9 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { MESSENGER_NAMES } from "@/lib/green-api/messenger"
 import { cn } from "@/lib/utils"
 import { useChatStore } from "@/store/chat-store"
-import { useSessionStore } from "@/store/session-store"
+import { useMessenger, useSessionStore } from "@/store/session-store"
 
 const railItem =
   "flex min-h-14 w-14 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-medium transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -25,6 +26,7 @@ const railItem =
 export function NavRail({ className }: { className?: string }) {
   const openChat = useChatStore((state) => state.openChat)
   const logout = useSessionStore((state) => state.logout)
+  const messengerName = MESSENGER_NAMES[useMessenger()]
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   return (
@@ -65,8 +67,8 @@ export function NavRail({ className }: { className?: string }) {
           <DialogHeader>
             <DialogTitle className="text-xl">Выйти?</DialogTitle>
             <DialogDescription>
-              История переписки на этом устройстве будет удалена. Сообщения в
-              MAX останутся.
+              История переписки на этом устройстве будет удалена. Сообщения в{" "}
+              {messengerName} останутся.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-2">

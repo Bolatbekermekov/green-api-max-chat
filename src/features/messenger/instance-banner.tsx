@@ -12,23 +12,33 @@ import { useShallow } from "zustand/react/shallow"
 
 import { useGreenApi } from "@/components/green-api-provider"
 import { describeError } from "@/lib/green-api/errors"
+import { MESSENGER_NAMES } from "@/lib/green-api/messenger"
 import {
   RECOMMENDED_SETTINGS,
   type SettingsIssue,
 } from "@/lib/green-api/settings"
+import type { InstanceState } from "@/lib/green-api/types"
 import { cn } from "@/lib/utils"
-import { useSessionStore } from "@/store/session-store"
+import { useMessenger, useSessionStore } from "@/store/session-store"
 
 const CONSOLE_URL = "https://console.green-api.com"
 
-const STATE_MESSAGES: Record<string, string> = {
-  notAuthorized:
-    "Инстанс не авторизован в MAX. Отсканируйте QR-код в консоли GREEN-API.",
-  starting: "Инстанс запускается — это может занять до 5 минут.",
-  blocked: "Аккаунт MAX этого инстанса заблокирован.",
-  suspended: "Инстанс приостановлен. Проверьте тариф в консоли GREEN-API.",
-  pendingPassword:
-    "Инстанс ждёт пароль от MAX. Завершите вход в консоли GREEN-API.",
+function stateMessage(state: InstanceState, messengerName: string): string {
+  switch (state) {
+    case "notAuthorized":
+      return `Инстанс не авторизован в ${messengerName}. Отсканируйте QR-код в консоли GREEN-API.`
+    case "starting":
+      return "Инстанс запускается — это может занять до 5 минут."
+    case "blocked":
+      return `Аккаунт ${messengerName} этого инстанса заблокирован.`
+    case "suspended":
+    case "yellowCard":
+      return "Отправка временно ограничена. Подробности — в консоли GREEN-API."
+    case "pendingPassword":
+      return `Инстанс ждёт пароль от ${messengerName}. Завершите вход в консоли GREEN-API.`
+    default:
+      return `Инстанс недоступен (состояние: ${state}).`
+  }
 }
 
 function lowerFirst(text: string): string {
@@ -78,6 +88,7 @@ function Banner({
 /** Explains anything that stops messages from arriving, with a fix if we can. */
 export function InstanceBanner() {
   const client = useGreenApi()
+  const messengerName = MESSENGER_NAMES[useMessenger()]
   const { settingsIssues, instanceState, connection } = useSessionStore(
     useShallow((state) => ({
       settingsIssues: state.settingsIssues,
@@ -158,8 +169,7 @@ export function InstanceBanner() {
           </a>
         }
       >
-        {STATE_MESSAGES[instanceState] ??
-          `Инстанс недоступен (состояние: ${instanceState}).`}
+        {stateMessage(instanceState, messengerName)}
       </Banner>,
     )
   }

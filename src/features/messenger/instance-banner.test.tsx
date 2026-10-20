@@ -78,6 +78,31 @@ describe("InstanceBanner", () => {
     ).toHaveAttribute("href", "https://console.green-api.com")
   })
 
+  it("names WhatsApp for a WhatsApp instance", () => {
+    useSessionStore.setState({
+      messenger: "whatsapp",
+      instanceState: "notAuthorized",
+    })
+    renderBanner()
+
+    expect(
+      screen.getByText(
+        "Инстанс не авторизован в WhatsApp. Отсканируйте QR-код в консоли GREEN-API.",
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it.each(["suspended", "yellowCard"])("explains a %s instance", (state) => {
+    useSessionStore.setState({ messenger: "whatsapp", instanceState: state })
+    renderBanner()
+
+    expect(
+      screen.getByText(
+        "Отправка временно ограничена. Подробности — в консоли GREEN-API.",
+      ),
+    ).toBeInTheDocument()
+  })
+
   it("shows reconnecting status", () => {
     useSessionStore.setState({ connection: "reconnecting" })
     renderBanner()
