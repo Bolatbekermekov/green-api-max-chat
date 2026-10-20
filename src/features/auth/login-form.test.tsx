@@ -19,7 +19,11 @@ const settings: InstanceSettings = {
 
 function setup({
   getStateInstance = vi.fn(async () => "authorized"),
-}: { getStateInstance?: () => Promise<string> } = {}) {
+  typeInstance = settings.typeInstance,
+}: {
+  getStateInstance?: () => Promise<string>
+  typeInstance?: string
+} = {}) {
   const onLoggedIn = vi.fn()
   const createClient = vi.fn<
     (
@@ -27,7 +31,7 @@ function setup({
     ) => Pick<GreenApiClient, "getStateInstance" | "getSettings">
   >(() => ({
     getStateInstance,
-    getSettings: vi.fn(async () => settings),
+    getSettings: vi.fn(async () => ({ ...settings, typeInstance })),
   }))
   render(<LoginForm onLoggedIn={onLoggedIn} createClient={createClient} />)
   return { onLoggedIn, createClient, user: userEvent.setup() }
@@ -78,7 +82,21 @@ describe("LoginForm", () => {
     expect(onLoggedIn).toHaveBeenCalledWith(credentials, {
       state: "authorized",
       issues: [],
+      messenger: "max",
     })
+  })
+
+  it("explains that only MAX and WhatsApp instances work", async () => {
+    const { user, onLoggedIn } = setup({ typeInstance: "telegram" })
+
+    await user.type(idField(), "7700000001")
+    await user.type(tokenField(), "tok")
+    await user.click(submit())
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Чат работает с инстансами MAX и WhatsApp",
+    )
+    expect(onLoggedIn).not.toHaveBeenCalled()
   })
 
   it("uses a custom apiUrl when provided", async () => {

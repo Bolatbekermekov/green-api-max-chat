@@ -1,12 +1,12 @@
-export type Messenger = "max" | "whatsapp"
+export type MessengerType = "max" | "whatsapp"
 
-export const MESSENGER_NAMES: Record<Messenger, string> = {
+export const MESSENGER_NAMES: Record<MessengerType, string> = {
   max: "MAX",
   whatsapp: "WhatsApp",
 }
 
 /** Longest text SendMessage accepts, per the GREEN-API docs. */
-export const MESSAGE_LIMITS: Record<Messenger, number> = {
+export const MESSAGE_LIMITS: Record<MessengerType, number> = {
   max: 4000,
   whatsapp: 20000,
 }
@@ -18,7 +18,7 @@ export const MESSAGE_LIMITS: Record<Messenger, number> = {
  */
 export function detectMessenger(
   typeInstance: string | undefined,
-): Messenger | null {
+): MessengerType | null {
   if (typeInstance === "v3") return "max"
   if (typeInstance === "whatsapp" || !typeInstance) return "whatsapp"
   return null

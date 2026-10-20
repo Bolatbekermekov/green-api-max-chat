@@ -3,10 +3,10 @@
 // (green-api.com/docs/api/receiving/notifications-format/). Used by unit
 // and end-to-end tests only. Timestamps are in seconds, as the API sends them.
 
-import type { Messenger } from "@/lib/green-api/messenger"
+import type { MessengerType } from "@/lib/green-api/messenger"
 import type { DeliveryStatus } from "@/lib/green-api/notifications"
 
-const instanceData: Record<Messenger, object> = {
+const instanceData: Record<MessengerType, object> = {
   max: { idInstance: 3100000000, wid: "79991234567@c.us", typeInstance: "v3" },
   whatsapp: {
     idInstance: 1101111111,
@@ -87,7 +87,7 @@ export function incomingTextBody({
   typeMessage?: IncomingType
   /** MAX only: WhatsApp marks groups by the chatId suffix "@g.us". */
   chatType?: "user" | "group"
-  messenger?: Messenger
+  messenger?: MessengerType
 }) {
   const group = chatType === "group"
   const senderData: SenderData =
@@ -132,7 +132,7 @@ export function outgoingTextBody({
   text: string
   timestamp?: number
   fromApi?: boolean
-  messenger?: Messenger
+  messenger?: MessengerType
 }) {
   const senderData: SenderData =
     messenger === "max"
@@ -176,7 +176,7 @@ export function statusBody({
   idMessage: string
   status: DeliveryStatus
   timestamp?: number
-  messenger?: Messenger
+  messenger?: MessengerType
 }) {
   return {
     typeWebhook: "outgoingMessageStatus",
@@ -192,7 +192,7 @@ export function statusBody({
 export function stateBody(
   state: string,
   timestamp = 1755589527,
-  messenger: Messenger = "max",
+  messenger: MessengerType = "max",
 ) {
   return {
     typeWebhook: "stateInstanceChanged",

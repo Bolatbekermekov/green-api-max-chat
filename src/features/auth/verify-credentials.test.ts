@@ -37,6 +37,7 @@ describe("verifyCredentials", () => {
 
     await expect(verifyCredentials(client)).resolves.toEqual({
       state: "authorized",
+      messenger: "max",
       issues: [
         {
           key: "incomingWebhook",
@@ -60,6 +61,30 @@ describe("verifyCredentials", () => {
     const result = await verifyCredentials(client)
     expect(result.state).toBe("notAuthorized")
     expect(result.issues.map((issue) => issue.key)).toEqual(["webhookUrl"])
+  })
+
+  it("recognises a WhatsApp instance", async () => {
+    const { client } = clientWith(
+      json({ stateInstance: "authorized" }),
+      json({ ...settings, typeInstance: "whatsapp" }),
+    )
+
+    await expect(verifyCredentials(client)).resolves.toMatchObject({
+      messenger: "whatsapp",
+      issues: [],
+    })
+  })
+
+  it("rejects an instance of another messenger", async () => {
+    const { client } = clientWith(
+      json({ stateInstance: "authorized" }),
+      json({ ...settings, typeInstance: "telegram" }),
+    )
+
+    await expect(verifyCredentials(client)).rejects.toMatchObject({
+      code: "unsupported-instance",
+      detail: "telegram",
+    })
   })
 
   it("rejects with unauthorized on a wrong token", async () => {

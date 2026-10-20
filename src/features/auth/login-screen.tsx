@@ -33,10 +33,11 @@ export function LoginScreen() {
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <AppLogo className="size-16" />
           <h1 className="text-xl leading-7 font-semibold">
-            Вход в MAX через GREEN-API
+            Вход через GREEN-API
           </h1>
           <p className="text-[15px] leading-5 text-muted-foreground">
-            Введите данные инстанса из личного кабинета GREEN-API
+            Введите данные инстанса MAX или WhatsApp из личного кабинета
+            GREEN-API
           </p>
         </div>
 

@@ -51,6 +51,28 @@ describe("useInstanceCheck", () => {
     ).toEqual(["incomingWebhook"])
   })
 
+  it("updates the messenger after a page reload", async () => {
+    useSessionStore.setState({ messenger: null })
+    const client = fakeGreenApiClient({
+      getStateInstance: vi.fn(async () => "authorized"),
+      getSettings: vi.fn(async () => ({
+        webhookUrl: "",
+        incomingWebhook: "yes" as const,
+        outgoingWebhook: "yes" as const,
+        outgoingMessageWebhook: "yes" as const,
+        outgoingAPIMessageWebhook: "yes" as const,
+        stateWebhook: "yes" as const,
+        typeInstance: "whatsapp",
+      })),
+    })
+
+    renderCheck(client)
+
+    await waitFor(() =>
+      expect(useSessionStore.getState().messenger).toBe("whatsapp"),
+    )
+  })
+
   it("skips the check right after login", () => {
     useSessionStore.setState({ instanceState: "authorized" })
     const client = fakeGreenApiClient()

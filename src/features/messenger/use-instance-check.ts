@@ -11,8 +11,9 @@ import { useSessionStore } from "@/store/session-store"
 const CREDENTIAL_ERRORS = new Set(["unauthorized", "forbidden", "not-found"])
 
 /**
- * Only credentials survive a page reload, so a restored session re-checks
- * the instance state and settings once. Right after login they are fresh.
+ * Only credentials and the messenger survive a page reload, so a restored
+ * session re-checks the instance state and settings once. Right after login
+ * they are fresh.
  */
 export function useInstanceCheck() {
   const client = useGreenApi()
@@ -22,9 +23,10 @@ export function useInstanceCheck() {
     const controller = new AbortController()
 
     verifyCredentials(client, controller.signal)
-      .then(({ state, issues }) => {
+      .then(({ state, issues, messenger }) => {
         if (controller.signal.aborted) return
         const session = useSessionStore.getState()
+        session.setMessenger(messenger)
         session.setInstanceState(state)
         session.setSettingsIssues(issues)
       })
