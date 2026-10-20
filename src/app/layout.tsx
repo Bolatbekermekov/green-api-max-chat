@@ -15,7 +15,7 @@ const roboto = Roboto({
 export const metadata: Metadata = {
   title: "MAX Chat — GREEN-API",
   description:
-    "Веб-чат для отправки и получения сообщений в мессенджере MAX через GREEN-API",
+    "Веб-чат для отправки и получения сообщений в MAX и WhatsApp через GREEN-API",
 }
 
 export const viewport: Viewport = {
