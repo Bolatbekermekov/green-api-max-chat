@@ -2,6 +2,7 @@ import { normalizeApiUrl } from "@/lib/green-api/api-url"
 import { errorFromResponse, GreenApiError } from "@/lib/green-api/errors"
 import type {
   CheckAccountResult,
+  CheckWhatsappResult,
   Credentials,
   InstanceSettings,
   InstanceState,
@@ -16,10 +17,16 @@ export type GreenApiClient = {
     patch: Partial<InstanceSettings>,
     signal?: AbortSignal,
   ): Promise<void>
+  /** MAX: finds the numeric chatId of a phone number. */
   checkAccount(
     phoneDigits: string,
     signal?: AbortSignal,
   ): Promise<CheckAccountResult>
+  /** WhatsApp: tells whether a phone number has an account. */
+  checkWhatsapp(
+    phoneDigits: string,
+    signal?: AbortSignal,
+  ): Promise<CheckWhatsappResult>
   sendMessage(
     chatId: string,
     message: string,
@@ -141,6 +148,17 @@ export function createGreenApiClient(
         throw invalidResponse()
       }
       return { exist: data.exist, chatId: data.chatId }
+    },
+
+    async checkWhatsapp(phoneDigits, signal) {
+      const data = await request("POST", "checkWhatsapp", {
+        body: { chatId: `${phoneDigits}@c.us` },
+        signal,
+      })
+      if (!isRecord(data) || typeof data.existsWhatsapp !== "boolean") {
+        throw invalidResponse()
+      }
+      return { exists: data.existsWhatsapp }
     },
 
     async sendMessage(chatId, message, signal) {

@@ -6,7 +6,6 @@ export type SettingsIssue = {
     | "incomingWebhook"
     | "outgoingWebhook"
     | "outgoingMessageWebhook"
-    | "typeInstance"
   severity: "error" | "warning"
   message: string
 }
@@ -15,7 +14,8 @@ export type SettingsIssue = {
  * What the chat needs from an instance: notifications go to the HTTP API
  * queue (no webhook URL) and cover incoming messages, delivery statuses,
  * messages sent from the phone or the API, and instance state changes.
- * A new instance has all of them switched off.
+ * A new MAX instance has all of them switched off. WhatsApp uses the same
+ * setting names.
  */
 export const RECOMMENDED_SETTINGS: Partial<InstanceSettings> = {
   webhookUrl: "",
@@ -61,13 +61,6 @@ export function findSettingsIssues(
       key: "outgoingMessageWebhook",
       severity: "warning",
       message: "Не будут видны сообщения, отправленные с телефона",
-    })
-  }
-  if (settings.typeInstance && settings.typeInstance !== "v3") {
-    issues.push({
-      key: "typeInstance",
-      severity: "warning",
-      message: `Это не MAX-инстанс (typeInstance: ${settings.typeInstance})`,
     })
   }
   return issues

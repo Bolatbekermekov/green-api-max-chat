@@ -268,10 +268,51 @@ describe("events", () => {
     expect(selectLastMessage(store(), chatId)?.status).toBe("read")
   })
 
+  it("a sent status keeps the message sent", () => {
+    store().upsertChat({ chatId })
+    const localId = store().addPendingMessage(chatId, "x", 5_000)
+    store().markSent(chatId, localId, "OUT-1")
+
+    store().applyEvent({
+      type: "status",
+      chatId,
+      idMessage: "OUT-1",
+      status: "sent",
+      timestamp: 6_000,
+    })
+
+    expect(selectLastMessage(store(), chatId)).toMatchObject({
+      status: "sent",
+    })
+    expect(selectLastMessage(store(), chatId)).not.toHaveProperty(
+      "error",
+      expect.anything(),
+    )
+  })
+
+  it("a late sent status does not undo delivered", () => {
+    store().upsertChat({ chatId })
+    const localId = store().addPendingMessage(chatId, "x", 5_000)
+    store().markSent(chatId, localId, "OUT-1")
+    for (const status of ["delivered", "sent"] as const) {
+      store().applyEvent({
+        type: "status",
+        chatId,
+        idMessage: "OUT-1",
+        status,
+        timestamp: 6_000,
+      })
+    }
+
+    expect(selectLastMessage(store(), chatId)?.status).toBe("delivered")
+  })
+
   it.each([
-    ["noAccount", "У получателя нет аккаунта MAX"],
+    ["noAccount", "У получателя нет аккаунта в мессенджере"],
     ["failed", "Не удалось доставить сообщение"],
     ["notInGroup", "Вы не участник этого чата"],
+    ["suspended", "Отправка временно ограничена"],
+    ["yellowCard", "Отправка временно ограничена"],
   ] as const)("status %s marks the message failed", (status, error) => {
     store().upsertChat({ chatId })
     const localId = store().addPendingMessage(chatId, "x", 5_000)

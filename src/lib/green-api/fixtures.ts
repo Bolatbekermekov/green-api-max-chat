@@ -1,13 +1,31 @@
-// Notification bodies shaped like the examples in the GREEN-API MAX docs
-// (green-api.com/v3/docs/api/receiving/notifications-format/). Used by unit
+// Notification bodies shaped like the examples in the GREEN-API docs for MAX
+// (green-api.com/v3/docs/api/receiving/notifications-format/) and WhatsApp
+// (green-api.com/docs/api/receiving/notifications-format/). Used by unit
 // and end-to-end tests only. Timestamps are in seconds, as the API sends them.
 
+import type { Messenger } from "@/lib/green-api/messenger"
 import type { DeliveryStatus } from "@/lib/green-api/notifications"
 
-const instanceData = {
-  idInstance: 3100000000,
-  wid: "79991234567@c.us",
-  typeInstance: "v3",
+const instanceData: Record<Messenger, object> = {
+  max: { idInstance: 3100000000, wid: "79991234567@c.us", typeInstance: "v3" },
+  whatsapp: {
+    idInstance: 1101111111,
+    wid: "79876543210@c.us",
+    typeInstance: "whatsapp",
+  },
+}
+
+// WhatsApp sends no chatType, senderType or senderPhoneNumber: the phone is
+// part of the chatId ("79001234567@c.us").
+type SenderData = {
+  chatId: string
+  chatName: string
+  chatType?: string
+  sender: string
+  senderName: string
+  senderType?: string
+  senderContactName: string
+  senderPhoneNumber?: number
 }
 
 type IncomingType =
@@ -59,6 +77,7 @@ export function incomingTextBody({
   chatName = "Ходабрыш Пробешёлов",
   typeMessage = "textMessage",
   chatType = "user",
+  messenger = "max",
 }: {
   chatId: string
   idMessage: string
@@ -66,23 +85,36 @@ export function incomingTextBody({
   timestamp?: number
   chatName?: string
   typeMessage?: IncomingType
+  /** MAX only: WhatsApp marks groups by the chatId suffix "@g.us". */
   chatType?: "user" | "group"
+  messenger?: Messenger
 }) {
+  const group = chatType === "group"
+  const senderData: SenderData =
+    messenger === "max"
+      ? {
+          chatId,
+          chatName,
+          chatType,
+          sender: group ? "10000000" : chatId,
+          senderName: chatName,
+          senderType: "user",
+          senderContactName: group ? "" : chatName,
+          senderPhoneNumber: group ? 0 : 79876543210,
+        }
+      : {
+          chatId,
+          chatName,
+          sender: chatId,
+          senderName: chatName,
+          senderContactName: chatName,
+        }
   return {
     typeWebhook: "incomingMessageReceived",
-    instanceData,
+    instanceData: instanceData[messenger],
     timestamp,
     idMessage,
-    senderData: {
-      chatId,
-      chatName,
-      chatType,
-      sender: chatType === "group" ? "10000000" : chatId,
-      senderName: chatName,
-      senderType: "user",
-      senderContactName: chatType === "group" ? "" : chatName,
-      senderPhoneNumber: chatType === "group" ? 0 : 79876543210,
-    },
+    senderData,
     messageData: messageData(typeMessage, text),
   }
 }
@@ -93,30 +125,42 @@ export function outgoingTextBody({
   text,
   timestamp = 1763115112,
   fromApi = true,
+  messenger = "max",
 }: {
   chatId: string
   idMessage: string
   text: string
   timestamp?: number
   fromApi?: boolean
+  messenger?: Messenger
 }) {
+  const senderData: SenderData =
+    messenger === "max"
+      ? {
+          chatId,
+          chatName: "Ходабрыш Пробешёлов",
+          chatType: "user",
+          sender: "10000000",
+          senderName: "Ходабрыш Пробешёлов",
+          senderType: "user",
+          senderContactName: "Ходабрыш Пробешёлов",
+          senderPhoneNumber: 79876543210,
+        }
+      : {
+          chatId,
+          chatName: "Иван",
+          sender: "79876543210@c.us",
+          senderName: "",
+          senderContactName: "",
+        }
   return {
     typeWebhook: fromApi
       ? "outgoingAPIMessageReceived"
       : "outgoingMessageReceived",
-    instanceData,
+    instanceData: instanceData[messenger],
     timestamp,
     idMessage,
-    senderData: {
-      chatId,
-      chatName: "Ходабрыш Пробешёлов",
-      chatType: "user",
-      sender: "10000000",
-      senderName: "Ходабрыш Пробешёлов",
-      senderType: "user",
-      senderContactName: "Ходабрыш Пробешёлов",
-      senderPhoneNumber: 79876543210,
-    },
+    senderData,
     messageData: messageData("textMessage", text),
   }
 }
@@ -126,26 +170,33 @@ export function statusBody({
   idMessage,
   status,
   timestamp = 1755591519,
+  messenger = "max",
 }: {
   chatId: string
   idMessage: string
   status: DeliveryStatus
   timestamp?: number
+  messenger?: Messenger
 }) {
   return {
     typeWebhook: "outgoingMessageStatus",
     chatId,
-    instanceData,
+    instanceData: instanceData[messenger],
     timestamp,
     idMessage,
     status,
+    ...(messenger === "whatsapp" ? { sendByApi: true } : {}),
   }
 }
 
-export function stateBody(state: string, timestamp = 1755589527) {
+export function stateBody(
+  state: string,
+  timestamp = 1755589527,
+  messenger: Messenger = "max",
+) {
   return {
     typeWebhook: "stateInstanceChanged",
-    instanceData,
+    instanceData: instanceData[messenger],
     timestamp,
     stateInstance: state,
   }

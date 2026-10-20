@@ -12,6 +12,8 @@ export type InstanceState =
   | "starting"
   | "suspended"
   | "pendingPassword"
+  /** WhatsApp, deprecated: replaced by "suspended". */
+  | "yellowCard"
   | (string & {})
 
 export type YesNo = "yes" | "no"
@@ -27,11 +29,13 @@ export type InstanceSettings = {
   /** Messages sent through the API (echo of our own sends). */
   outgoingAPIMessageWebhook: YesNo
   stateWebhook: YesNo
-  /** "v3" for MAX instances. */
+  /** "v3" for MAX, "whatsapp" (or missing) for WhatsApp. */
   typeInstance?: string
 }
 
 export type CheckAccountResult = { exist: boolean; chatId: string }
+
+export type CheckWhatsappResult = { exists: boolean }
 
 export type SendMessageResult = { idMessage: string }
 

@@ -2,8 +2,19 @@ import { z } from "zod"
 
 import type { InstanceState } from "@/lib/green-api/types"
 
-export type DeliveryStatus =
-  "delivered" | "read" | "failed" | "noAccount" | "notInGroup"
+const DELIVERY_STATUSES = [
+  "delivered",
+  "read",
+  "failed",
+  "noAccount",
+  "notInGroup",
+  // WhatsApp only. yellowCard is the deprecated name of suspended.
+  "sent",
+  "suspended",
+  "yellowCard",
+] as const
+
+export type DeliveryStatus = (typeof DELIVERY_STATUSES)[number]
 
 export type ChatEvent =
   | {
@@ -16,7 +27,10 @@ export type ChatEvent =
       /** Milliseconds since epoch. */
       timestamp: number
       chatName?: string
-      /** Sender's phone digits, for incoming messages when MAX shares it. */
+      /**
+       * Phone digits of the other side: part of a WhatsApp chatId, or the
+       * sender's number for incoming MAX messages when MAX shares it.
+       */
       phone?: string
     }
   | {
@@ -57,7 +71,7 @@ const statusNotification = z.object({
   chatId: z.string(),
   idMessage: z.string(),
   timestamp: z.number(),
-  status: z.enum(["delivered", "read", "failed", "noAccount", "notInGroup"]),
+  status: z.enum(DELIVERY_STATUSES),
 })
 
 const stateNotification = z.object({
@@ -74,9 +88,16 @@ const notificationSchema = z.discriminatedUnion("typeWebhook", [
 
 type MessageNotification = z.infer<typeof messageNotification>
 
-// Group chats have negative ids; this app handles one-to-one chats only.
-function isGroupChat(chatId: string, chatType?: string): boolean {
-  return chatType === "group" || chatId.startsWith("-")
+// This app handles one-to-one chats only. MAX group chats have negative ids;
+// WhatsApp marks groups, status updates and channels by the chatId suffix.
+function isPersonalChat(chatId: string, chatType?: string): boolean {
+  if (chatType === "group" || chatId.startsWith("-")) return false
+  return !/@(g\.us|broadcast|newsletter)$/.test(chatId)
+}
+
+// "79001234567@c.us"; a "…@lid" chat hides the number.
+function phoneFromChatId(chatId: string): string | undefined {
+  return /^(\d+)@c\.us$/.exec(chatId)?.[1]
 }
 
 function extractText({
@@ -102,7 +123,7 @@ export function parseNotification(body: unknown): ChatEvent | null {
 
   switch (notification.typeWebhook) {
     case "outgoingMessageStatus":
-      if (isGroupChat(notification.chatId)) return null
+      if (!isPersonalChat(notification.chatId)) return null
       return {
         type: "status",
         chatId: notification.chatId,
@@ -120,7 +141,7 @@ export function parseNotification(body: unknown): ChatEvent | null {
 
     default: {
       const { senderData } = notification
-      if (isGroupChat(senderData.chatId, senderData.chatType)) return null
+      if (!isPersonalChat(senderData.chatId, senderData.chatType)) return null
       const direction =
         notification.typeWebhook === "incomingMessageReceived" ? "in" : "out"
       // For our own messages the sender fields describe us, not the chat.
@@ -131,9 +152,10 @@ export function parseNotification(body: unknown): ChatEvent | null {
           : undefined) ||
         undefined
       const phone =
-        direction === "in" && senderData.senderPhoneNumber
+        phoneFromChatId(senderData.chatId) ??
+        (direction === "in" && senderData.senderPhoneNumber
           ? String(senderData.senderPhoneNumber)
-          : undefined
+          : undefined)
 
       return {
         type: "message",

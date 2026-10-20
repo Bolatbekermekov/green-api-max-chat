@@ -23,6 +23,7 @@ const ALL_CODES: GreenApiErrorCode[] = [
   "check-limited",
   "server",
   "invalid-response",
+  "unsupported-instance",
 ]
 
 describe("describeError", () => {
@@ -31,6 +32,15 @@ describe("describeError", () => {
     expect(message).not.toBe(GENERIC)
     expect(message).toMatch(/[а-яё]/i)
   })
+
+  it.each(ALL_CODES.filter((code) => code !== "unsupported-instance"))(
+    "does not name a messenger in %s, shared by MAX and WhatsApp",
+    (code) => {
+      expect(describeError(new GreenApiError(code))).not.toMatch(
+        /MAX|WhatsApp/,
+      )
+    },
+  )
 
   it("explains a wrong token", () => {
     expect(

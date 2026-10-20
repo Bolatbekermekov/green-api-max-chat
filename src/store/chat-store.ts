@@ -73,8 +73,21 @@ const STATUS_RANK: Record<MessageStatus, number> = {
 
 const FAILURE_REASONS: Partial<Record<DeliveryStatus, string>> = {
   failed: "Не удалось доставить сообщение",
-  noAccount: "У получателя нет аккаунта MAX",
+  noAccount: "У получателя нет аккаунта в мессенджере",
   notInGroup: "Вы не участник этого чата",
+  suspended: "Отправка временно ограничена",
+  yellowCard: "Отправка временно ограничена",
+}
+
+function toMessageStatus(status: DeliveryStatus): MessageStatus {
+  switch (status) {
+    case "sent":
+    case "delivered":
+    case "read":
+      return status
+    default:
+      return "failed"
+  }
 }
 
 // Not crypto.randomUUID(): it is missing outside secure contexts (plain
@@ -270,10 +283,7 @@ export const useChatStore = create<ChatState>()(
           const { chatId } = event
 
           if (event.type === "status") {
-            const next: MessageStatus =
-              event.status === "delivered" || event.status === "read"
-                ? event.status
-                : "failed"
+            const next = toMessageStatus(event.status)
             updateMessages(chatId, (list) =>
               list.map((m) =>
                 m.idMessage === event.idMessage && upgradeStatus(m.status, next)

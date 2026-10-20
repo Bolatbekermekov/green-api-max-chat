@@ -170,3 +170,110 @@ describe("parseNotification", () => {
     expect(parseNotification(body)).toBeNull()
   })
 })
+
+describe("parseNotification for WhatsApp", () => {
+  it("parses an incoming text message and reads the phone from the chatId", () => {
+    const body = incomingTextBody({
+      messenger: "whatsapp",
+      chatId: "79001234567@c.us",
+      idMessage: "F7AEC1B7086ECDC7E6E45923F5EDB825",
+      text: "I use Green-API to send this message to you!",
+      timestamp: 1588091580,
+      chatName: "Иван",
+    })
+
+    expect(parseNotification(body)).toEqual({
+      type: "message",
+      direction: "in",
+      chatId: "79001234567@c.us",
+      idMessage: "F7AEC1B7086ECDC7E6E45923F5EDB825",
+      text: "I use Green-API to send this message to you!",
+      timestamp: 1588091580000,
+      chatName: "Иван",
+      phone: "79001234567",
+    })
+  })
+
+  it("reads the recipient's phone from a message sent from the phone", () => {
+    const body = outgoingTextBody({
+      messenger: "whatsapp",
+      chatId: "79001234567@c.us",
+      idMessage: "3EB0C767D097B7C7C030",
+      text: "Ответ",
+      fromApi: false,
+    })
+
+    expect(parseNotification(body)).toMatchObject({
+      type: "message",
+      direction: "out",
+      chatId: "79001234567@c.us",
+      chatName: "Иван",
+      phone: "79001234567",
+    })
+  })
+
+  it("keeps a chat addressed by lid, without a phone", () => {
+    const parsed = parseNotification(
+      incomingTextBody({
+        messenger: "whatsapp",
+        chatId: "123456789012345@lid",
+        idMessage: "W1",
+        text: "Привет",
+      }),
+    )
+
+    expect(parsed).toMatchObject({
+      type: "message",
+      chatId: "123456789012345@lid",
+    })
+    expect(parsed).not.toHaveProperty("phone")
+  })
+
+  it.each([
+    "120363369140947676@g.us",
+    "status@broadcast",
+    "120363000000000000@newsletter",
+  ])("ignores %s: groups, status updates and channels", (chatId) => {
+    expect(
+      parseNotification(
+        incomingTextBody({
+          messenger: "whatsapp",
+          chatId,
+          idMessage: "G1",
+          text: "не личный чат",
+        }),
+      ),
+    ).toBeNull()
+    expect(
+      parseNotification(
+        statusBody({
+          messenger: "whatsapp",
+          chatId,
+          idMessage: "G2",
+          status: "read",
+        }),
+      ),
+    ).toBeNull()
+  })
+
+  it.each(["sent", "suspended", "yellowCard"] as const)(
+    "parses the %s status",
+    (status) => {
+      const body = statusBody({
+        messenger: "whatsapp",
+        chatId: "79876543210@c.us",
+        idMessage: "3EB0608D6A2901063D63",
+        status,
+        timestamp: 1727691478,
+      })
+
+      expect(parseNotification(body)).toEqual({
+        type: "status",
+        chatId: "79876543210@c.us",
+        idMessage: "3EB0608D6A2901063D63",
+        status,
+        timestamp: 1727691478000,
+      })
+    },
+  )
+})

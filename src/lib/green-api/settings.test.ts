@@ -63,14 +63,8 @@ describe("findSettingsIssues", () => {
     ])
   })
 
-  it("warns when the instance is not MAX", () => {
-    expect(findSettingsIssues({ ...good, typeInstance: "whatsapp" })).toEqual([
-      {
-        key: "typeInstance",
-        severity: "warning",
-        message: "Это не MAX-инстанс (typeInstance: whatsapp)",
-      },
-    ])
+  it("accepts WhatsApp instances with the same settings", () => {
+    expect(findSettingsIssues({ ...good, typeInstance: "whatsapp" })).toEqual([])
   })
 
   it("treats missing switches as off", () => {

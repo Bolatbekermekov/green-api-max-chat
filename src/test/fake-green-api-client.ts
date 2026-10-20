@@ -19,6 +19,7 @@ export function fakeGreenApiClient(
     getSettings: unexpected("getSettings"),
     setSettings: unexpected("setSettings"),
     checkAccount: unexpected("checkAccount"),
+    checkWhatsapp: unexpected("checkWhatsapp"),
     sendMessage: unexpected("sendMessage"),
     receiveNotification: unexpected("receiveNotification"),
     deleteNotification: unexpected("deleteNotification"),

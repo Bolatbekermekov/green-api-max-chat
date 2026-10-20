@@ -12,6 +12,7 @@ export type GreenApiErrorCode =
   | "check-limited"
   | "server"
   | "invalid-response"
+  | "unsupported-instance"
 
 export class GreenApiError extends Error {
   readonly code: GreenApiErrorCode
@@ -37,7 +38,7 @@ const MESSAGES: Record<GreenApiErrorCode, string> = {
   "webhook-url-set":
     "В настройках инстанса указан webhookUrl — сообщения через HTTP API не приходят",
   "not-authorized":
-    "Инстанс не авторизован в MAX. Отсканируйте QR-код в консоли GREEN-API",
+    "Инстанс не авторизован. Отсканируйте QR-код в консоли GREEN-API",
   "instance-starting": "Инстанс запускается. Попробуйте через минуту",
   unauthorized: "Неверный apiTokenInstance",
   forbidden:
@@ -46,9 +47,11 @@ const MESSAGES: Record<GreenApiErrorCode, string> = {
   "rate-limited": "Слишком много запросов. Попробуйте через несколько секунд",
   "quota-exceeded":
     "Превышен лимит бесплатного тарифа GREEN-API (не больше 3 чатов)",
-  "check-limited": "MAX временно ограничил проверку номеров. Попробуйте позже",
+  "check-limited": "Проверка номеров временно недоступна. Попробуйте позже",
   server: "Сервер GREEN-API временно недоступен",
   "invalid-response": "Неожиданный ответ GREEN-API",
+  "unsupported-instance":
+    "Чат работает с инстансами MAX и WhatsApp. Создайте такой инстанс в консоли GREEN-API",
 }
 
 const GENERIC_MESSAGE = "Что-то пошло не так. Попробуйте ещё раз"
@@ -85,7 +88,8 @@ function classifyReason(text: string): GreenApiErrorCode {
   if (/webhook url is set/i.test(text)) return "webhook-url-set"
   if (/starting process/i.test(text)) return "instance-starting"
   if (/not authorized/i.test(text)) return "not-authorized"
-  if (/limit reached/i.test(text)) return "check-limited"
+  // MAX: "limit reached"; WhatsApp: "check phone number timeout limit exceeded".
+  if (/limit reached|timeout limit exceeded/i.test(text)) return "check-limited"
   return "bad-request"
 }
 

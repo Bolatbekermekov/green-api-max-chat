@@ -89,9 +89,8 @@ export function InstanceBanner() {
 
   const errors = settingsIssues.filter((issue) => issue.severity === "error")
   const warnings = settingsIssues.filter(
-    (issue) => issue.severity === "warning" && issue.key !== "typeInstance",
+    (issue) => issue.severity === "warning",
   )
-  const notMax = settingsIssues.find((issue) => issue.key === "typeInstance")
 
   async function fixSettings() {
     setFixing(true)
@@ -101,9 +100,7 @@ export function InstanceBanner() {
         "Настройки сохранены. Инстанс перезапустится — это займёт до 5 минут",
       )
       const session = useSessionStore.getState()
-      session.setSettingsIssues(
-        session.settingsIssues.filter((issue) => issue.key === "typeInstance"),
-      )
+      session.setSettingsIssues([])
       session.restartPolling()
     } catch (error) {
       toast.error(describeError(error))
@@ -185,14 +182,6 @@ export function InstanceBanner() {
       </Banner>,
     )
   }
-  if (notMax) {
-    banners.push(
-      <Banner key="type" tone="info">
-        {notMax.message}
-      </Banner>,
-    )
-  }
-
   if (banners.length === 0) return null
   return (
     <div

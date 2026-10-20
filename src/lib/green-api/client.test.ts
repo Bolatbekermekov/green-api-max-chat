@@ -71,6 +71,33 @@ describe("createGreenApiClient", () => {
     expect(lastCall(fetchImpl).init.body).toBe('{"phoneNumber":79991234567}')
   })
 
+  it("checkWhatsapp asks about the phone's personal chatId", async () => {
+    const fetchImpl = fakeFetch(
+      json({
+        existsWhatsapp: true,
+        chatId: "123456789012345@lid",
+        username: "",
+        phoneNumber: "79876543210@c.us",
+        fromCache: false,
+      }),
+    )
+    const client = createGreenApiClient(creds, fetchImpl)
+
+    await expect(client.checkWhatsapp("79876543210")).resolves.toEqual({
+      exists: true,
+    })
+    expect(lastCall(fetchImpl).url).toBe(`${BASE}/checkWhatsapp/tok`)
+    expect(lastCall(fetchImpl).init.method).toBe("POST")
+    expect(lastCall(fetchImpl).init.body).toBe('{"chatId":"79876543210@c.us"}')
+  })
+
+  it("checkWhatsapp rejects an answer without existsWhatsapp", async () => {
+    const client = createGreenApiClient(creds, fakeFetch(json({ chatId: "" })))
+    await expect(client.checkWhatsapp("79876543210")).rejects.toMatchObject({
+      code: "invalid-response",
+    })
+  })
+
   it("treats a {status:false} body as an error even with HTTP 200", async () => {
     const fetchImpl = fakeFetch(
       json({ status: false, reason: "instance is starting or not authorized" }),
@@ -167,6 +194,7 @@ describe("createGreenApiClient", () => {
       "not-authorized",
     ],
     [400, "instance in starting process try later", "instance-starting"],
+    [400, "check phone number timeout limit exceeded", "check-limited"],
     [400, '{"message":"Validation failed"}', "bad-request"],
   ])("maps HTTP %i %j to %s", async (status, body, code) => {
     const client = createGreenApiClient(creds, fakeFetch(text(body, status)))
